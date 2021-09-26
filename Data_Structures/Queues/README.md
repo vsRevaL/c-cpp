@@ -1,4 +1,4 @@
-# SEE `Queues.md`
+# SEE [`Queues.md`](../Queues/Queues.md)
 
 <br>
 <br>
