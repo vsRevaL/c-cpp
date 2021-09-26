@@ -1,4 +1,4 @@
-# SEE `Stack.md`
+# SEE [`Stack.md`](../Stack/Stack.md)
 
 <br>
 <br>
