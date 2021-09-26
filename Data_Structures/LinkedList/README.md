@@ -1,4 +1,4 @@
-# SEE `LinkedList.md`
+# SEE (`LinkedList.md`)[LinkedList.md]
 
 <br>
 <br>
