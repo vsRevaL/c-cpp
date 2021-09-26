@@ -1,4 +1,4 @@
-# SEE (`LinkedList.md`)[LinkedList.md]
+# SEE (LinkedList.md) [LinkedList/README.md]
 
 <br>
 <br>
