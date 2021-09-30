@@ -11,6 +11,13 @@ gcc main.c -o main
 ./main
 ```
 
+OR
+
+```
+gcc main.c
+./a.out
+```
+
 ## Pointer arithmetic
 
 ```java
