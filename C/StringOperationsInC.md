@@ -3,7 +3,7 @@
 ## Reference:
  - **CodeVault** https://www.youtube.com/playlist?list=PLfqABt5AS4FmSwyvP5a3mYsaksq6yR3-Z
 
- ## String literals and string initializations
+## String literals and string initializations
 
 ```cs
 int main(int argc, char** argv){
