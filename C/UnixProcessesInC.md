@@ -39,7 +39,7 @@ int main()
 }
 ```
 
-```cs
+```cpp
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
