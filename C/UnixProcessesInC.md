@@ -43,7 +43,12 @@ int main()
 }
 ```
 
+<<<<<<< HEAD
 ```cs
+=======
+```cpp
+#include <stdlib.h>
+>>>>>>> 91a22e8aa5d9d297dcafc038704c90da864e95b4
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h> 
