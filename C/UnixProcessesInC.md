@@ -18,12 +18,16 @@
 It's not recommended to use fork() in a loop - 2^n fork() calls
 
 ```cs
-#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <time.h>
-#include <string.h>
+#include <stdlib.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
 
 int main()
 {
@@ -40,12 +44,16 @@ int main()
 ```
 
 ```cs
-#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <time.h>
-#include <string.h>
+#include <stdlib.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
 
 /**
  * Task: Create 3 processes only.
@@ -66,12 +74,16 @@ int main()
 ## Waiting for processes to finish (using the wait function) in C
 
 ```cs
-#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <time.h>
-#include <string.h>
+#include <stdlib.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
 
 /**
  * Task: Print nums from 1 to 10
@@ -107,12 +119,16 @@ int main() {
 ## Process IDs in C
 
 ```cs
-#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <time.h>
-#include <string.h>
+#include <stdlib.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
 
 int main() {
     pid_t id = fork();
@@ -126,12 +142,16 @@ int main() {
 <br>
 
 ```cs
-#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <time.h>
-#include <string.h>
+#include <stdlib.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
 
 int main() {
     pid_t id = fork();
@@ -168,13 +188,16 @@ No children to wait for
 ![img.png](img.png)
 
 ```cs
-#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <time.h>
-#include <string.h>
-#include <sys/wait.h>
+#include <stdlib.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <errno.h>
+#include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
 
 int main() {
     pid_t id1 = fork();
@@ -210,12 +233,16 @@ int main() {
 ## Communicating between processes (using pipes) in C
 
 ```cs
-#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <time.h>
-#include <string.h>
+#include <stdlib.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
 
 /** Task:
  * Getting a number input from user int the child process,
@@ -275,12 +302,16 @@ int main() {
 ## Practical use case for fork and pipe in C
 
 ```cs
-#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <time.h>
-#include <string.h>
+#include <stdlib.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
 
 /** Task:
  * We want the sum of a array
@@ -327,12 +358,16 @@ So far so good. <br>
 Now we just need to send the information from one process to the another.
 
 ```cs
-#include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <time.h>
-#include <string.h>
+#include <stdlib.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
 
 /** Task:
  * We want the sum of a array
@@ -407,12 +442,14 @@ int main() {
 ```cs
 #include <stdio.h>
 #include <unistd.h>
-#include <stdlib.h>
+#include <stdlib.h> 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
 #include <sys/wait.h>
-#include <fcntl.h> // to open fifo
-#include <errno.h> // for errno, the number of last error
+#include <string.h>
+#include <signal.h>
 
 int main(int argc, char *argv[])
 {
@@ -464,6 +501,8 @@ Take a look at this code, looks nice. But..
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
 
 /** Task:
  * Generate a number [1-5], send to the other process
@@ -541,6 +580,8 @@ Let's see:
 #include <fcntl.h>
 #include <errno.h>
 #include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
 
 /** Task:
  * Generate a number [1-5], send to the other process
@@ -612,6 +653,476 @@ int main(int argc, char *argv[])
 ```
 
 This guaranteed to always work.
+
+## How to send an array through a pipe
+
+Spoiler: We need to send the array size (n) as well
+
+```cs
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
+
+/** Task:
+ * 2 processes
+ * 1) Child proc should generate random numbers
+ * and send them to the parent
+ * 2) parent is will sum them and print the result 
+**/ 
+int main() {
+
+    int fd[2]; //child -> parent
+    if (pipe(fd) == -1) {
+        printf("[ERROR]: creating pipe\n");
+        return 1;
+    }
+
+    pid_t pid = fork();
+    if (pid == -1) {
+        printf("[ERROR]: forking\n");
+        return 2;
+    }
+
+    if (pid == 0) { //Child
+        close(fd[0]);
+        int n;
+        int arr[10];
+        srand(pid);
+        n = rand() % 10 + 1;
+        printf("Generated: ");
+        for (int i = 0; i < n; i++) {
+            arr[i] = rand() % 11;
+            printf("%d ", arr[i]);
+        }
+        printf("\n");
+        if (write(fd[1], &n, sizeof(int)) < 0) {
+            printf("[ERRO]: writing arr size\n");
+            return 3;
+        }
+        printf("Sent n= %d\n", n);
+        if (write(fd[1], arr, sizeof(int) * n) < 0) {
+            printf("[ERROR]: writing pipe\n");
+            return 4;
+        }
+        close(fd[1]);
+    }
+    else { //Parent
+        close(fd[1]);
+        int arr[10];
+        int n;
+        if (read(fd[0], &n, sizeof(int)) < 0) {
+            printf("[ERROR]: reading arr size\n");
+            return 5;
+        }
+        if (read(fd[0], arr, sizeof(int) * n) < 0) {
+            printf("[ERROR]: reading arr size\n");
+            return 6;
+        }
+
+        int sum = 0;
+        for (int i = 0; i < n; i++) {
+            sum += arr[i];
+        }
+        printf("Result is: %d\n", sum);
+
+        close(fd[0]);
+        wait(NULL);
+    }
+    
+    return 0;
+}
+```
+
+## How to send a string through a pipe
+
+```cs
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
+
+/** Task:
+ * 2 processes
+ * 1) Child proc should generate random numbers
+ * and send them to the parent
+ * 2) parent is will sum them and print the result 
+**/ 
+int main() {
+
+    int fd[2]; //child -> parent
+    if (pipe(fd) == -1) {
+        printf("[ERROR]: creating pipe\n");
+        return 1;
+    }
+
+    pid_t pid = fork();
+    if (pid == -1) {
+        printf("[ERROR]: forking\n");
+        return 2;
+    }
+
+    if (pid == 0) { //Child proc
+        close(fd[0]);
+        char str[200];
+        printf("Input a string: ");
+        fgets(str, 200, stdin);
+        str[strlen(str) - 1] = '\0';
+        int n = strlen(str) + 1;
+        if (write(fd[1], &n, sizeof(int)) == -1) {
+            printf("[ERROR]: writing string size\n");
+            return 3;
+        }
+
+        if (write(fd[1], str, sizeof(char) * strlen(str) + 1) == -1) {
+            printf("[ERROR]: writing pipe\n");
+            return 4;
+        }
+
+        close(fd[1]);
+    }
+    else { //Parent proc
+        close(fd[1]);
+        char str[200];
+        int n;
+        if (read(fd[0], &n, sizeof(int)) == -1) {
+            printf("[ERROR]: reading string size\n");
+            return 4;
+        }
+
+        if (read(fd[0], str, sizeof(char) * n) == -1) {
+            printf("[ERROR]: reading pipe\n");
+            return 5;
+        }
+        printf("Received: %s\n", str);
+        close(fd[0]);
+        wait(NULL);
+    }
+    
+    return 0;
+}
+```
+
+<br>
+
+## Short introduction to signals in C
+
+```cs
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
+
+int main() {
+    pid_t pid = fork();
+    if (pid == -1) {
+        printf("[ERROR]: with fork\n");
+        return 1;
+    }
+
+    if (pid == 0) { //Child
+        while (1) {
+            printf("Some text goes here\n");
+            usleep(50000);
+        }
+    }
+    else { //Parent
+        sleep(1);
+        kill(pid, SIGKILL);
+
+        wait(NULL);
+    }
+
+    return 0;
+}
+```
+
+<br>
+
+## Stopping and continuing the execution of a process (using SIGCONT and SIGSTOP)
+
+```cs
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
+
+int main() {
+    pid_t pid = fork();
+    if (pid == -1) {
+        return 1;
+    }
+
+    if (pid == 0) {
+        while (1) {
+            printf("Valami\n");
+            usleep(50000);
+        }
+    }
+    else {
+        kill(pid, SIGSTOP);
+        int t;
+        do {
+            printf("Time in seconds for execution: ");
+            scanf("%d", &t);
+
+            if (t > 0) {
+                kill(pid, SIGCONT);
+                sleep(t);
+                kill(pid, SIGSTOP);
+            }
+
+        } while (t > 0);
+
+        kill(pid, SIGKILL);
+        wait(NULL);
+    }
+    
+    return 0;
+}
+```
+
+## Handling signals
+
+```cs
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
+
+void handle_sigstp(int sig) {
+    printf("Stop not allowed\n");
+}
+
+int main(int argc, char* argv[]) {
+    struct sigaction sa;
+    sa.sa_handler = &handle_sigstp;
+    sa.sa_flags = SA_RESTART;
+
+    sigaction(SIGTSTP, &sa, NULL);
+
+    int x;
+    printf("Input a number: ");
+    scanf("%d", &x);
+    printf("Result %d * 5 = %d\n", x, x * 5);
+
+    return 0;
+}
+```
+
+```cs
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
+
+void handle_sigtstp(int sig) {
+    printf("Stop not allowed\n");
+}
+
+int main(int argc, char* argv[]) {
+    //struct sigaction sa;
+    //sa.sa_handler = &handle_sigstp;
+    //sa.sa_flags = SA_RESTART;
+    //sigaction(SIGTSTP, &sa, NULL);
+
+    signal(SIGTSTP, &handle_sigtstp);
+
+    int x;
+    printf("Input a number: ");
+    scanf("%d", &x);
+    printf("Result %d * 5 = %d\n", x, x * 5);
+
+    return 0;
+}
+```
+
+```cs
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
+
+void handle_sigtstp(int sig) {
+    printf("Stop not allowed\n");
+}
+
+void handle_sigcont(int sig) {
+    printf("Input number: \n");
+    fflush(stdout);
+}
+
+int main(int argc, char* argv[]) {
+    //signal(SIGTSTP, &handle_sigtstp);
+    signal(SIGCONT, &handle_sigcont);
+
+    int x;
+    printf("Input a number: ");
+    scanf("%d", &x);
+    printf("Result %d * 5 = %d\n", x, x * 5);
+
+    return 0;
+}
+```
+
+## Communicating between processes using signals
+
+```cs
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
+
+int x = 0;
+
+void handle_sigusr1() {
+    if (x == 0) {
+        printf("\n(HINT) Its 15\n"); // Not recommended to do 
+        // basically anything in signal handler
+    }
+}
+
+int main(int argc, char* argv[]) {
+    pid_t pid = fork();
+    if (pid == -1) {
+        return 1;
+    }
+
+    if (pid == 0) { //Child
+        sleep(5);
+        kill(getppid(), SIGUSR1);
+    }
+    else { //Parent
+        signal(SIGUSR1, &handle_sigusr1);
+        printf("What is the result of 3 x 5: ");
+        scanf("%d", &x);
+        if (x == 15) {
+            printf("Right!\n");
+        }
+        else {
+            printf("Wrong!\n");
+        }
+
+        wait(NULL);
+    }
+
+    return 0;
+}
+```
+
+<br>
+
+## How to execute another program in C (using exec)
+
+```cs
+
+```
+
+<br>
+
+## What is waitpid()?
+
+Waits for a specific child to finnish execution.
+
+```cs
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h> 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <sys/wait.h>
+#include <string.h>
+#include <signal.h>
+
+int main(int argc, char* argv[]) {
+    pid_t pid1 = fork();
+    if (pid1 == -1) {
+        printf("[ERROR]: creating process\n");
+        return 1;
+    }
+    if (pid1 == 0) {
+        sleep(4);
+        printf("Finished execution (%d)\n", getpid());
+        return 0;
+    }
+
+    pid_t pid2 = fork();
+    if (pid2 == -1) {
+        printf("[ERRO] creating 2nd process\n");
+        return 2;
+    }
+    if (pid2 == 0) {
+        sleep(1);
+        printf("Finished execution (%d)\n", getpid());
+        return 0;
+    }
+
+    pid_t pid1_res = waitpid(pid1, NULL, 0);
+    printf("Waited for %d\n", pid1_res);
+    pid_t pid2_res = waitpid(pid2, NULL, 0);
+    printf("Waited for %d\n", pid2_res);
+
+    return 0;
+}
+```
+
+<br>
+
+##  
+
+```cs
+
+```
 
 <br>
 <br>
