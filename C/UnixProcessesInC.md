@@ -1118,12 +1118,257 @@ int main(int argc, char* argv[]) {
 ```
 
 <br>
+<br>
+<br>
+<br>
+<br>
 
-##  
+# Feladatok
+
+## Hasznos függvények
 
 ```cs
 
+/***************** Üzenet *******************/
+struct uzenet { 
+    long mtype;
+    char mtext [ 1024 ]; 
+};
+
+int getRandomNumber(int start, int end) {
+    //srand(time(NULL));
+    return rand () % (end - start) + start;
+}
+
+int kuld( int uzenetsor , char message[]) 
+{ 
+    struct uzenet uz;
+    uz.mtype = 5,
+    strcpy(uz.mtext, message);
+    int status; 
+    status = msgsnd( uzenetsor, &uz, strlen ( uz.mtext ) + 1 , 0 ); 
+    if ( status < 0 ) 
+        perror("msgsnd"); 
+    return 0; 
+}
+
+int fogad( int uzenetsor ) 
+{ 
+    struct uzenet uz; 
+    int status; 
+    status = msgrcv(uzenetsor, &uz, 1024, 5, 0 ); 
+    if ( status < 0 ) 
+        perror("msgsnd"); 
+    else
+        printf( "%d folyamat %ld kódú üzenetet kapott: %s\n",getpid(), uz.mtype, uz.mtext ); 
+    return 0; 
+} 
+
+/*****************  Szemafor *******************/
+#define MEMSIZE 1024
+
+int szemafor_letrehozas(const char *pathname, int szemafor_ertek)
+{
+    int semid;
+    key_t kulcs = ftok(pathname, 1);
+    if ((semid = semget(kulcs, 1, IPC_CREAT | S_IRUSR | S_IWUSR)) < 0)
+        perror("semget");
+    // semget 2. parameter is the number of semaphores
+    if (semctl(semid, 0, SETVAL, szemafor_ertek) < 0) //0= first semaphores
+        perror("semctl");
+
+    return semid;
+}
+
+void szemafor_muvelet(int semid, int op)
+{
+    struct sembuf muvelet;
+
+    muvelet.sem_num = 0;
+    muvelet.sem_op = op; // op=1 up, op=-1 down
+    muvelet.sem_flg = 0;
+
+    if (semop(semid, &muvelet, 1) < 0) // 1 number of sem. operations
+        perror("semop");
+}
+
+void szemafor_torles(int semid)
+{
+    semctl(semid, 0, IPC_RMID);
+}
+
+
 ```
+
+## Példa üzenetsor használatára Signállal
+
+```cs
+#include <stdlib.h>
+#include <stdio.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <wait.h>
+#include <time.h>
+#include <stdbool.h>
+#include <unistd.h>
+#include <string.h>
+#include <fcntl.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/msg.h>
+#include <semaphore.h>
+#include "functions.h"
+
+int h = 0;
+void handler(int signum) {
+    h++;
+}
+
+/**
+ *  Task: Van 2 folyamat, parent küldjön üzenetet a childnek
+ *  child válaszoljon vissza neki
+ * 
+**/
+int main(int argc, char* argv[]) {
+    signal(SIGUSR1, handler);
+
+    key_t kulcs = ftok(argv[0], 1);
+    printf("A kulcs: %d\n", kulcs);
+    int uzenetsor = msgget(kulcs, 0600 | IPC_CREAT);
+    if (uzenetsor < 0) {
+        perror("msgget");
+        return 1;
+    }
+
+    pid_t child = fork();
+    if (child == 0) { //Child
+        fogad(uzenetsor);
+        kuld(uzenetsor, "Szia neked is Parnet process!");
+        kill(getppid(), SIGUSR1);
+        while (h == 0) { usleep(20); }
+        h = 0;
+        fogad(uzenetsor);
+        kuld(uzenetsor, "Köszönöm jól!");
+        kill(getppid(), SIGUSR1);
+        while (h == 0 ) { usleep(20); }
+        fogad(uzenetsor);
+        fogad(uzenetsor);
+        kuld(uzenetsor, "Köszönöm szépen! Neked is további szép napot Parent process!");
+        kill(getppid(), SIGUSR1);
+    }
+    else { //Parent
+        kuld(uzenetsor, "Szia child process!");
+        while (h == 0) { usleep(20); }
+        h = 0;
+        fogad(uzenetsor);
+        kuld(uzenetsor, "Hogy vagyunk ma Child process?");
+        kill(child, SIGUSR1);
+        while (h == 0) { usleep(20); }
+        h = 0;
+        fogad(uzenetsor);
+        kuld(uzenetsor, "Ennek bizony örülök!");
+        kuld(uzenetsor, "További szép napot neked Child process!");
+        kill(child, SIGUSR1);
+        while (h == 0) { usleep(20); }
+        fogad(uzenetsor);
+
+        /*******************Fontos****************/
+        waitpid(child, NULL, 0);
+        int status = msgctl(uzenetsor, IPC_RMID, NULL);
+        if (status < 0) {
+            printf("[ERROR]: parent - msgctl\n");
+            return 2;
+        }
+        /*******************************************/
+    }
+
+    return 0;
+}
+```
+
+## Példa oszotott memória használatára Signállal
+
+```cs
+#include <stdlib.h>
+#include <stdio.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <wait.h>
+#include <time.h>
+#include <stdbool.h>
+#include <unistd.h>
+#include <string.h>
+#include <fcntl.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/msg.h>
+#include <semaphore.h>
+#include "functions.h"
+
+int h = 0;
+void handler(int signum) {
+    h++;
+}
+
+int main(int argc, char* argv[]) {
+    signal(SIGUSR1, handler);
+
+    /*********Osztott memória létrehozása*************/
+    key_t kulcs = ftok(argv[0], 1); //kulcs generálás
+    int oszt_mem_id = shmget(kulcs, 500, IPC_CREAT | S_IRUSR | S_IWUSR); //osztott memória létrehozása
+    char* s = shmat(oszt_mem_id, NULL, 0); //csatlakozás az osztott memóriához
+    /************************************************/
+
+    pid_t child = fork();
+    if (child > 0) { //Parent
+        strcpy(s, "Szia Child Process!"); //beírunk a memóriába
+        //shmdt(s); //lecsatlakozunk a memóriáról, nem kell már az adat
+        kill(child, SIGUSR1); //szólunk, hogy beírtuk a memóriába az adatot
+        
+        while (h == 0) { usleep(20); }
+        h = 0;
+        printf("A parnet ezt olvasta ki: %s\n", s);
+        strcpy(s, "Hogy vagyunk ma Child process?");
+        kill(child, SIGUSR1);
+
+        while (h == 0) { usleep(20); }
+        printf("A parnet ezt olvasta ki: %s\n", s);
+        strcpy(s, "Ennek igazán örülök!");
+        kill(child, SIGUSR1);
+
+        shmdt(s); //lecsatlakozunk a memóriáról
+        waitpid(child, NULL, 0);
+        shmctl(oszt_mem_id, IPC_RMID, NULL); //töröljük az osztott memóriát
+    }
+    else { //Child
+        while (h == 0) { usleep(20); } //várunk még a parent nem szól, hogy beírta a memóba az adatot
+        h = 0;
+        printf("A gyerek ezt olvasta a memóriából: %s\n", s);
+        //shmdt(s); //lecsatlakozunk a memóriáról, nem kell már az adat
+        strcpy(s, "Szia Parent processz!");
+        kill(getppid(), SIGUSR1);
+
+        while (h == 0) { usleep(20); }
+        h = 0;
+        printf("A gyerek ezt olvasta a memóriából: %s\n", s);
+        strcpy(s, "Köszönöm, én jól vagyok!");
+        kill(getppid(), SIGUSR1);
+
+        while (h == 0) { usleep(20); }
+        printf("A gyerek ezt olvasta a memóriából: %s\n", s);
+
+        shmdt(s); //lecsatlakozunk a memóriáról
+    }
+    
+    return 0;
+}
+```
+
+## Szemafor használata
+
+
 
 <br>
 <br>
