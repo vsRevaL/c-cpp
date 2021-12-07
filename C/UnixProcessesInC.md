@@ -1143,10 +1143,16 @@ int main(int argc, char* argv[]) {
 ```cs
 
 /***************** Üzenet *******************/
+
+/***************** Üzenet *******************/
 struct uzenet { 
     long mtype;
     char mtext [ 1024 ]; 
 };
+
+/*void handler(int sign){
+    printf("%d folyamat %d jelzést kapott.\n",getpid(), sign);
+}*/
 
 int getRandomNumber(int start, int end) {
     //srand(time(NULL));
@@ -1193,6 +1199,8 @@ void szemafor_torles(char *nev)
 {
 	sem_unlink(nev);
 }
+
+
 
 ```
 
