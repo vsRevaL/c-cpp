@@ -1143,8 +1143,6 @@ int main(int argc, char* argv[]) {
 ```cs
 
 /***************** Üzenet *******************/
-
-/***************** Üzenet *******************/
 struct uzenet { 
     long mtype;
     char mtext [ 1024 ]; 
@@ -1440,10 +1438,194 @@ int main(int argc, char *argv[]) // gcc -pthread [...]
 }
 ```
 
-## Feladat Szemaforral
+## Zh feladat web
 
 ```cs
+#include <stdlib.h>
+#include <stdio.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <wait.h>
+#include <time.h>
+#include <stdbool.h>
+#include <unistd.h>
+#include <string.h>
+#include <fcntl.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/msg.h>
+#include <semaphore.h>
+#include "functions.h"
 
+int h = 0;
+void handler(int sign){
+    //printf("[Signal1]>>>>>>>>>: %d folyamat %d jelzést kapott.\n",getpid(), sign);
+    h++;
+}
+
+int h2 = 0;
+void handler2(int sign){
+    //printf("[Signal2]>>>>>>>>>: %d folyamat %d jelzést kapott.\n",getpid(), sign);
+    h2++;
+}
+
+int main(int argc, char* argv[]) {
+    int lista_size = 5;
+    const char lista[5][32] = {
+        "Kifli",
+        "Bambi",
+        "Zsömle",
+        "Kenyér",
+        "Cukor"
+    };
+
+    signal(SIGUSR1, handler);
+    signal(SIGUSR2, handler2);
+    int p1[2]; //parent -> child1
+    int p2[2]; //parent -> child2
+
+    key_t kulcs = ftok(argv[0], 1);
+    //printf("A kulcs: %d\n", kulcs);
+    int uzenetsor = msgget(kulcs, 0600 | IPC_CREAT);
+    if (uzenetsor < 0) {
+        printf("[ERROR]: üzenetsor létrehozás\n");
+        return 1;
+    }
+
+    int oszt_mem_id = shmget(kulcs, 500, IPC_CREAT | S_IRUSR | S_IWUSR); //osztott memória létrehozása
+    char* s = shmat(oszt_mem_id, NULL, 0); //csatlakozás az osztott memóriához
+
+    char* sem_nev1 = "/w4e4v5_sem1";
+    sem_t* semid1 = szemafor_letrehozas(sem_nev1, 0); //szemafor létrehozás
+    
+    char* sem_nev2 = "/w4e4v5_sem2";
+    sem_t* semid2 = szemafor_letrehozas(sem_nev2, 0); //szemafor létrehozás
+    
+    char* sem_nev3 = "/w4e4v5_sem3";
+    sem_t* semid3 = szemafor_letrehozas(sem_nev3, 0); //szemafor létrehozás
+
+    if (pipe(p1) < 0 || pipe(p2) < 0) {
+        printf("[ERROR]: opening pipes\n");
+        return 1;
+    }
+    
+    pid_t child1 = fork();
+    pid_t child2;
+    if (child1 == 0) { //Child1
+        close(p2[0]); close(p2[1]); close(p1[1]);
+        //printf("[Child1]: pid számom = %d\n", getpid());
+        printf("[Child1]: Bemehetek a boltba?\n");
+        kill(getppid(), SIGUSR1);
+        printf("[Child1]: Jelzést küldtem\n");
+        char buffer1[256];
+        if (read(p1[0], buffer1, sizeof(buffer1)) == -1) {
+            printf("[ERROR]: Reading p1 pipe\n");
+            return 1;
+        }
+        printf("[Child1]: ezt olvasta csőből: %s\n", buffer1);
+
+        fogad(uzenetsor);
+        printf("[Child1]: viszont kívánom\n");
+
+        srand(getpid());
+        int randnum = rand() % 5;
+        printf("[Child1]: Válaszott áru= %s\n", lista[randnum]);
+        strcpy(s, lista[randnum]);
+        printf("[Child1]: beírta az árut a memóriába\n");
+        sem_post(semid1);
+
+        close(p1[0]);
+        shmdt(s);
+        printf("Child1 végzett\n");
+    }
+    else {
+        child2 = fork();
+        if (child2 == 0) { //Child2
+            close(p1[0]); close(p1[1]); close(p2[1]);
+            //printf("[Child2]: pid számom = %d\n", getpid());
+            printf("[Child2]: Bemehetek a boltba?\n");
+            kill(getppid(), SIGUSR2);
+            printf("[Child2]: Jelzést küldtem\n");
+            char buffer2[256];
+            if (read(p2[0], buffer2, sizeof(buffer2)) == -1) {
+                printf("[ERROR]: Reading p2 pipe\n");
+                return 1;
+            }
+            printf("[Child2]: ezt olvasta csőből: %s\n", buffer2);
+
+            fogad(uzenetsor);
+            printf("[Child2]: viszont kívánom\n");
+
+            srand(getpid());
+            int randnum = rand() % 5;
+            
+            sem_wait(semid2);
+            printf("[Child2]: Válaszott áru= %s\n", lista[randnum]);
+            strcpy(s, lista[randnum]);
+            printf("[Child2]: beleírt az memóriába\n");
+            sem_post(semid2);
+            sem_post(semid3);
+
+            close(p2[0]);
+            shmdt(s);
+            printf("Child2 végzett\n");
+        }
+        else { //Parent
+            close(p1[0]); close(p2[0]); //Csövek lezárása
+            while (h == 0 || h2 == 0) { usleep(20); }
+            h = 0; h2 = 0;
+            printf("[Parent]: Megkapta a jelzéseket\n");
+
+            char buffer[256];
+            strcpy(buffer, "Gyere be Child1");
+            if (write(p1[1], buffer, sizeof(buffer)) == -1) {
+                printf("[ERROR]: Writing p1 pipe\n");
+                return 2;
+            }
+            printf("[Parent]: küldtem csövön Child1-nek\n");
+
+            strcpy(buffer, "Gyere be Child2!");
+            if (write(p2[1],  buffer, sizeof(buffer)) == -1) {
+                printf("[ERROR]: Writing p2 pipe\n");
+                return 3;
+            }
+            printf("[Parent]: küldtem csövön Child2-nek\n");
+
+            kuld(uzenetsor, "Üdvözöllek!");
+            kuld(uzenetsor, "Üdvözöllek!");
+
+            
+
+            sem_wait(semid1);
+            printf("[Parent]: Child1 gyerek terméke: %s\n", s);
+            sem_post(semid1);
+            
+            sem_post(semid2);
+
+            sem_wait(semid3);
+            printf("[Parent]: Child2 gyerek terméke: %s\n", s);
+            sem_post(semid3);
+            
+            shmdt(s);
+            close(p1[1]); close(p2[1]); //Csövek lezárása
+            waitpid(child1, NULL, 0);
+            waitpid(child2, NULL, 0);
+            int status = msgctl(uzenetsor, IPC_RMID, NULL);
+            if (status < 0) {
+                printf("[ERROR]: parent - msgctl\n");
+                return 2;
+            }
+            shmctl(oszt_mem_id, IPC_RMID, NULL); //töröljük az osztott memóriát
+            szemafor_torles(sem_nev1); //szemafor törlés
+            szemafor_torles(sem_nev2); //szemafor törlés
+            szemafor_torles(sem_nev3); //szemafor törlés
+            printf("Parent végzett\n");
+        }
+    }
+    
+    return 0;
+}
 ```
 
 <br>
