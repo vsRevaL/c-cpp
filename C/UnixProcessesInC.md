@@ -1958,9 +1958,230 @@ int main(int argc, char* argv[]) {
     
     return 0;
 }
+```
+
+## zh feladat 06.03
+
+```cs
+#include <stdlib.h>
+#include <stdio.h>
+#include <signal.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <wait.h>
+#include <time.h>
+#include <stdbool.h>
+#include <unistd.h>
+#include <string.h>
+#include <fcntl.h>
+#include <sys/ipc.h>
+#include <sys/shm.h>
+#include <sys/msg.h>
+#include <semaphore.h>
+
+
+/***************** Üzenet *******************/
+struct uzenet { 
+    long mtype;
+    char mtext [ 1024 ]; 
+};
+
+/*void handler(int sign){
+    printf("%d folyamat %d jelzést kapott.\n",getpid(), sign);
+}*/
+
+int getRandomNumber(int start, int end) {
+    //srand(time(NULL));
+    return rand () % (end - start) + start;
+}
+
+int kuld( int uzenetsor , char message[]) 
+{ 
+    struct uzenet uz;
+    uz.mtype = 5,
+    strcpy(uz.mtext, message);
+    int status; 
+    status = msgsnd( uzenetsor, &uz, strlen ( uz.mtext ) + 1 , 0 ); 
+    if ( status < 0 ) 
+        perror("msgsnd"); 
+    return 0; 
+}
+
+int fogad( int uzenetsor, char* uzenet, int buffersize ) 
+{ 
+    struct uzenet uz; 
+    int status; 
+    status = msgrcv(uzenetsor, &uz, 1024, 5, 0 ); 
+    if ( status < 0 ) {
+        perror("msgsnd"); 
+    }
+    else {
+        //printf( "%d folyamat %ld kódú üzenetet kapott: %s\n",getpid(), uz.mtype, uz.mtext ); 
+    }
+    //return atoi(uz.mtext);
+    strncpy(uzenet, uz.mtext, buffersize-1);
+    return 0;
+} 
+
+/*****************  Szemafor *******************/
+#define MEMSIZE 1024
+
+sem_t *szemafor_letrehozas(char *nev, int szemafor_ertek)
+{
+	sem_t *semid = sem_open(nev, O_CREAT, S_IRUSR | S_IWUSR, szemafor_ertek);
+	if (semid == SEM_FAILED)
+		perror("sem_open");
+
+	return semid;
+}
+
+void szemafor_torles(char *nev)
+{
+	sem_unlink(nev);
+}
+
+
+int h = 0;
+void handler(int sign){
+    //printf("[Signal1]>>>>>>>>>: %d folyamat %d jelzést kapott.\n",getpid(), sign);
+    h++;
+}
+
+int h2 = 0;
+void handler2(int sign){
+    //printf("[Signal2]>>>>>>>>>: %d folyamat %d jelzést kapott.\n",getpid(), sign);
+    h2++;
+}
+
+int main(int argc, char* argv[]) {
+    signal(SIGUSR1, handler);
+    signal(SIGUSR2, handler2);
+
+    key_t kulcs = ftok(argv[0], 1);
+    //printf("A kulcs: %d\n", kulcs);
+    int uzenetsor = msgget(kulcs, 0600 | IPC_CREAT);
+    if (uzenetsor < 0) {
+        printf("[ERROR]: üzenetsor létrehozás\n");
+        return 1;
+    }
+
+    //int oszt_mem_id = shmget(kulcs, 500, IPC_CREAT | S_IRUSR | S_IWUSR); //osztott memória létrehozása
+    //char* s = shmat(oszt_mem_id, NULL, 0); //csatlakozás az osztott memóriához
+
+    char* sem_nev1 = "/w4e4v5_sem1";
+    sem_t* semid1 = szemafor_letrehozas(sem_nev1, 0); //szemafor létrehozás
+    
+    char* sem_nev2 = "/w4e4v5_sem2";
+    sem_t* semid2 = szemafor_letrehozas(sem_nev2, 0); //szemafor létrehozás
+    
+    char* sem_nev3 = "/w4e4v5_sem3";
+    sem_t* semid3 = szemafor_letrehozas(sem_nev3, 0); //szemafor létrehozás
+    
+    int p1[2]; //child2 -> parent
+    int p2[2]; //parent -> child2
+    if (pipe(p1) < 0 || pipe(p2) < 0) {
+        printf("[ERROR]: opening pipes\n");
+        return 1;
+    }
+    
+    pid_t child1 = fork();
+    pid_t child2;
+    if (child1 == 0) { //Child1 - Bütyök
+        close(p1[0]); close(p1[1]); close(p2[0]); close(p2[1]);
+        //printf("[Child1]: pid számom = %d\n", getpid());
+        
+        while (h == 0) { usleep(20); }
+        printf("[Child1]: Jajj, hív a gazda.. most lesz nemulass!\n");
+        kuld(uzenetsor, "Parancs gazdám, készen állok!");
+        /**** 1. feladat vége ****/
+
+        kill(getppid(), SIGUSR1);
+        char uzenet[1024];
+        fogad(uzenetsor, uzenet, sizeof(uzenet));
+        printf("[Child1]: Parent ezt küldte üzenetben = %s\n", uzenet);
+        /**** 2. Feladat vége ****/
+
+
+        /**** Takarítás ****/
+        //shmdt(s);
+
+        //printf("Child1 végzett\n");
+    }
+    else {
+        child2 = fork();
+        if (child2 == 0) { //Child2 - Tutajos
+            close(p1[0]); close(p2[1]);
+            //printf("[Child2]: pid számom = %d\n", getpid());
+
+            while (h != 1) { usleep(20); }
+            printf("[Child2]: Jajj, hív a gazda.. most lesz nemulass!\n");
+
+            if (write(p1[1], "Parancs gazdám, készen állok!", sizeof("Parancs gazdám, készen állok!")) == -1) {
+                printf("[ERROR]: Child2 - writing pipe1\n");
+            }
+            /**** 1. feladat vége ****/
+
+            char buffer[1024];
+            if (read(p2[0], buffer, sizeof(buffer)) == -1) {
+                printf("[ERR]: child2 - reading pipe2\n");
+            }
+            printf("[Child2]: parent ezt küldte csövön = %s\n", buffer);
+            /**** 2. Feladat vége ****/
+
+            /**** Takarítás ****/
+            //shmdt(s);
+            close(p1[1]);
+            close(p2[0]);
+            //printf("Child2 végzett\n");
+        }
+        else { //Parent - Matula
+            close(p1[1]);
+
+            printf("[Parent]: Ide hozzám!\n");
+            kill(child1, SIGUSR1);
+            kill(child2, SIGUSR1);
+            
+            char uzenet[1024];
+            fogad(uzenetsor, uzenet, sizeof(uzenet));
+            printf("[Parent]: Child1 ezt küldte üzenetben = %s\n", uzenet);
+            
+            if (read(p1[0], uzenet, sizeof(uzenet)) == -1) {
+                printf("[ERROR]: parent - reading pipe1\n");
+            }
+            printf("[Parent]: Child2 ezt küldte csövön = %s\n", uzenet);
+            /**** 1. feladat vége ****/
+
+            while (h == 0) { sleep(20); }
+            kuld(uzenetsor, "Vigyázz a libákra Child1!");
+            if (write(p2[1], "Vigyázz a libákra Child2!", sizeof("Vigyázz a libákra Child1!")) == -1) {
+                printf("[ERROR: parent - writing pipe2\n");
+            }
+
+            /**** Takarítás ****/
+            close(p1[0]);
+            //shmdt(s);
+            waitpid(child1, NULL, 0);
+            waitpid(child2, NULL, 0);
+            int status = msgctl(uzenetsor, IPC_RMID, NULL);
+            if (status < 0) {
+                printf("[ERROR]: parent - msgctl\n");
+                return 2;
+            }
+            //shmctl(oszt_mem_id, IPC_RMID, NULL); //töröljük az osztott memóriát
+            szemafor_torles(sem_nev1); //szemafor törlés
+            szemafor_torles(sem_nev2); //szemafor törlés
+            szemafor_torles(sem_nev3); //szemafor törlés
+            printf("Parent végzett\n");    
+        }
+    }
+    
+    return 0;
+}
+
 
 
 ```
+
 
 <br>
 <br>
